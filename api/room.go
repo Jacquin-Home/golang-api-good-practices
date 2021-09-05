@@ -26,8 +26,30 @@ type Problem struct {
 
 var room Room
 
-func CreateRoom(w http.ResponseWriter, r *http.Request) {
+type Availability int
 
+const (
+	free Availability = iota
+	reserved
+	inuse
+)
+
+var availability = [...]string{"free", "reserved", "inuse"}
+
+func (av Availability) String() string {
+	return availability[av]
+}
+
+func isAvailabilityValid(av string) bool {
+	for _, item := range availability {
+		if item == av {
+			return true
+		}
+	}
+	return false
+}
+
+func CreateRoom(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println(err)
@@ -37,6 +59,21 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+
+	if !isAvailabilityValid(receivedRoom.Availability) {
+		var problem = Problem{
+			Description: "Invalid availability",
+		}
+		eData, err := json.Marshal(problem)
+		if err != nil {
+			log.Println(err)
+		}
+		w.WriteHeader(400)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(eData)
+		return
+	}
+
 	roomId := uuid.New()
 	room = Room{
 		Id:           roomId,
