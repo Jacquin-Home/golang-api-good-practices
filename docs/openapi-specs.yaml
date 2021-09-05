@@ -1,0 +1,99 @@
+openapi: "3.0.2"
+info:
+  title: "Hotel JP"
+  version: 1.0.0
+
+components:
+  schemas:
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: id of the room
+        availability:
+          type: string
+          enum: [free, booked, inuse]
+          description: current room availability
+    Success:
+      type: object
+      properties:
+        success:
+          type: string
+          description: indicate success message
+
+paths:
+  /room:
+    get:
+      summary: Return room information
+      description: >
+        It can tell the room availability.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Id of the room
+          example: 123
+      responses:
+        200:
+          description: Room exists, and there is room information available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+              example:
+                id: 123
+
+    post:
+      summary: Create a new room
+      description: Create a new room in the hotel.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Room'
+            example:
+              id: 123
+              availability: free
+      responses:
+        201:
+          description: Room created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+              example:
+                success: Room was created!
+    patch:
+      summary: update room availability
+      description: if the room exists, the room availability can be updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Room'
+            example:
+              id: 123
+              availability: inuse
+      responses:
+        200:
+          description: room was updated
+
+    delete:
+      summary: Delete a room
+      description: Permantely delete a room, there is no way to roll the deleation back.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            id: integer
+          example: 123
+          description: id of the room to be permantely deleted.
+      responses:
+        204:
+          description: Room deleted, no body content is returned.
