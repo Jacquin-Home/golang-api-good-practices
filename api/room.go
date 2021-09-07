@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -12,7 +11,7 @@ import (
 )
 
 type Room struct {
-	Id           uuid.UUID `json:"id"`
+	ID           uuid.UUID `json:"id"`
 	Availability string    `json:"availability"`
 }
 
@@ -24,6 +23,7 @@ type Problem struct {
 	Description string `json:"description"`
 }
 
+// this is temporary, and will be replaced when there is a DB
 var room Room
 
 type Availability int
@@ -40,9 +40,9 @@ func (av Availability) String() string {
 	return availability[av]
 }
 
-func isAvailabilityValid(av string) bool {
+func (r Room) IsValid() bool {
 	for _, item := range availability {
-		if item == av {
+		if item == r.Availability {
 			return true
 		}
 	}
@@ -50,97 +50,79 @@ func isAvailabilityValid(av string) bool {
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println(err)
-	}
 	var receivedRoom Room
-	err = json.Unmarshal(body, &receivedRoom)
+	err := json.NewDecoder(r.Body).Decode(&receivedRoom)
 	if err != nil {
 		log.Println(err)
 	}
 
-	if !isAvailabilityValid(receivedRoom.Availability) {
+	if !receivedRoom.IsValid() {
 		var problem = Problem{
-			Description: "Invalid availability",
+			Description: "Invalid availability value",
 		}
-		eData, err := json.Marshal(problem)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
 		}
-		w.WriteHeader(400)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(eData)
 		return
 	}
 
-	roomId := uuid.New()
+	// create new room
 	room = Room{
-		Id:           roomId,
+		ID:           uuid.New(),
 		Availability: receivedRoom.Availability,
 	}
-	var success SuccessResponse
-	success = SuccessResponse{
+	success := SuccessResponse{
 		SuccessResponse: "Room created!",
 	}
-	jsonData, err := json.Marshal(success)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonData)
+	json.NewEncoder(w).Encode(success)
 }
 
 func GetRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if room.Id.ID() != 0 {
-		jsonData, err := json.Marshal(room)
+	if room.ID.ID() == 0 {
+		var problem = Problem{Description: "Room not found!"}
+		w.WriteHeader(http.StatusNotFound)
+		err := json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
 		}
-		w.Write(jsonData)
 		return
 	}
-	var problem = Problem{Description: "Room not found!"}
-	jsonErr, err := json.Marshal(problem)
+	err := json.NewEncoder(w).Encode(room)
 	if err != nil {
 		log.Println(err)
 	}
-	w.WriteHeader(404)
-	w.Write(jsonErr)
-
 }
 
 func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	if id == room.Id.String() {
-		// reset Room
-		room = Room{}
-		w.WriteHeader(204)
+	if id != room.ID.String() {
+		var problem = Problem{
+			Description: "Unable to delete, room not found!",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(404)
+		err := json.NewEncoder(w).Encode(problem)
+		if err != nil {
+			log.Println(err)
+		}
 		return
 	}
-	var problem Problem
-	problem = Problem{
-		Description: "Unable to delete, room not found!",
-	}
-
-	jsonData, err := json.Marshal(problem)
-	if err != nil {
-		log.Println(err)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-	w.Write(jsonData)
+	// reset Room
+	room = Room{}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func PatchRoom(w http.ResponseWriter, r *http.Request) {
 
 	var patchRoom Room
-
-	resp, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println(err)
-	}
-	err = json.Unmarshal(resp, &patchRoom)
+	err := json.NewDecoder(r.Body).Decode(&patchRoom)
 	if err != nil {
 		log.Println(err)
 	}
@@ -151,33 +133,31 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	patchRoom.Id = uId
+	patchRoom.ID = uId
 
 	w.Header().Set("Content-Type", "application/json")
-	if patchRoom.Id == room.Id && patchRoom.Availability == room.Availability {
-		w.WriteHeader(204)
+	if patchRoom.ID == room.ID && patchRoom.Availability == room.Availability {
+		w.WriteHeader(http.StatusNoContent)
 		return
-	} else if patchRoom.Id != room.Id {
-		var problem = Problem{
+	} else if patchRoom.ID != room.ID {
+		problem := Problem{
 			Description: "Room not found!",
 		}
-		errData, err := json.Marshal(problem)
+		w.WriteHeader(404)
+		err = json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
 		}
-		w.WriteHeader(404)
-		w.Write(errData)
 		return
 	}
 	room.Availability = patchRoom.Availability
 
-	var success = SuccessResponse{
+	success := SuccessResponse{
 		SuccessResponse: "Entity updated!",
 	}
-	sData, err := json.Marshal(success)
+	w.WriteHeader(200)
+	err = json.NewEncoder(w).Encode(success)
 	if err != nil {
 		log.Println(err)
 	}
-	w.WriteHeader(200)
-	w.Write(sData)
 }
