@@ -107,7 +107,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 			Description: "Unable to delete, room not found!",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 		err := json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
@@ -143,7 +143,7 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 		problem := Problem{
 			Description: "Room not found!",
 		}
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 		err = json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
@@ -155,7 +155,7 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	success := SuccessResponse{
 		SuccessResponse: "Entity updated!",
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(success)
 	if err != nil {
 		log.Println(err)
