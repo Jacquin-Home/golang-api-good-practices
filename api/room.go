@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -47,6 +48,36 @@ func (r Room) IsValid() bool {
 		}
 	}
 	return false
+}
+
+type Store interface {
+	GetAllRooms() ([]Room, error)
+}
+type Service struct {
+	Store Store
+}
+
+func (as Service) SayHi2() {
+	rooms, err := as.Store.GetAllRooms()
+	if err != nil {
+		log.Println(err)
+	}
+	for _, item := range rooms {
+		fmt.Println(item)
+	}
+}
+
+func (as Service) SayHi(w http.ResponseWriter, r *http.Request) {
+	rooms, err := as.Store.GetAllRooms()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = json.NewEncoder(w).Encode(rooms)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	w.Write([]byte("hi"))
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request) {
