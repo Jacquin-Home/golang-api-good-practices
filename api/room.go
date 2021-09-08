@@ -54,6 +54,8 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&receivedRoom)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if !receivedRoom.IsValid() {
@@ -95,6 +97,8 @@ func GetRoom(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(room)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -111,6 +115,8 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		return
 	}
@@ -125,6 +131,8 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&patchRoom)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	params := mux.Vars(r)
@@ -132,6 +140,8 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	uId, err := uuid.Parse(id)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	patchRoom.ID = uId
 
@@ -147,6 +157,8 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 		err = json.NewEncoder(w).Encode(problem)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		return
 	}
@@ -159,5 +171,7 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(success)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
