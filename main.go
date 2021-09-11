@@ -1,8 +1,8 @@
 package main
 
 import (
-	"hotel-jp/api"
-	"hotel-jp/store"
+	"golang-api-good-practices/api"
+	"golang-api-good-practices/store"
 	"log"
 	"net/http"
 
@@ -15,26 +15,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// todo: is it needed?
+	// https://github.com/jackc/pgx/issues/685
+	defer db.Close()
 
-	//store.CreateRoomTable(db)
-
-	service := api.Service{
+	roomService := api.RoomService{
 		Store: db,
 	}
-	//service.SayHi2()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/room", api.CreateRoom).Methods("POST")
-	r.HandleFunc("/room", api.GetRoom).Methods("GET")
+	r.HandleFunc("/rooms", api.CreateRoom).Methods("POST")
+	r.HandleFunc("/rooms", roomService.GetRooms).Methods("GET")
 	r.HandleFunc("/", api.Version).Methods("GET")
-	r.HandleFunc("/room/{id}", api.DeleteRoom).Methods("DELETE")
-	r.HandleFunc("/room/{id}", api.PatchRoom).Methods("PATCH")
+	r.HandleFunc("/rooms/{id}", api.DeleteRoom).Methods("DELETE")
+	r.HandleFunc("/rooms/{id}", api.PatchRoom).Methods("PATCH")
 
-	r.HandleFunc("/hi", service.SayHi).Methods("POST")
+	r.HandleFunc("/hi", roomService.SayHi).Methods("POST")
 
 	log.Println("HTTP server is up and running...")
 
-	err = http.ListenAndServe(":7000", r)
+	err = http.ListenAndServe("localhost:7000", r)
 	if err != nil {
 		panic(err)
 	}

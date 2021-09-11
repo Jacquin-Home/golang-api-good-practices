@@ -53,12 +53,12 @@ func (r Room) IsValid() bool {
 type Store interface {
 	GetAllRooms() ([]Room, error)
 }
-type Service struct {
+type RoomService struct {
 	Store Store
 }
 
-func (as Service) SayHi2() {
-	rooms, err := as.Store.GetAllRooms()
+func (rs RoomService) SayHi2() {
+	rooms, err := rs.Store.GetAllRooms()
 	if err != nil {
 		log.Println(err)
 	}
@@ -67,8 +67,8 @@ func (as Service) SayHi2() {
 	}
 }
 
-func (as Service) SayHi(w http.ResponseWriter, r *http.Request) {
-	rooms, err := as.Store.GetAllRooms()
+func (rs RoomService) SayHi(w http.ResponseWriter, r *http.Request) {
+	rooms, err := rs.Store.GetAllRooms()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -114,9 +114,18 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(success)
 }
 
-func GetRoom(w http.ResponseWriter, r *http.Request) {
+func (rs RoomService) GetRooms(w http.ResponseWriter, r *http.Request) {
+
+	var rooms []Room
+	rooms, err := rs.Store.GetAllRooms()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	fmt.Println(rooms)
+
 	w.Header().Set("Content-Type", "application/json")
-	if room.ID.ID() == 0 {
+	if len(rooms) == 0 {
 		var problem = Problem{Description: "Room not found!"}
 		w.WriteHeader(http.StatusNotFound)
 		err := json.NewEncoder(w).Encode(problem)
@@ -125,7 +134,7 @@ func GetRoom(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	err := json.NewEncoder(w).Encode(room)
+	err = json.NewEncoder(w).Encode(rooms)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -168,13 +177,11 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	id := params["id"]
-	uId, err := uuid.Parse(id)
+	uID, err := uuid.Parse(id)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
-	patchRoom.ID = uId
+	patchRoom.ID = uID
 
 	w.Header().Set("Content-Type", "application/json")
 	if patchRoom.ID == room.ID && patchRoom.Availability == room.Availability {
