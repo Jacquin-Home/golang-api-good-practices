@@ -52,6 +52,8 @@ func (r Room) IsValid() bool {
 
 type Store interface {
 	GetAllRooms() ([]Room, error)
+	SaveRoom(room Room) error
+	DeleteRoom(id string) error
 }
 type RoomService struct {
 	Store Store
@@ -80,7 +82,7 @@ func (rs RoomService) SayHi(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hi"))
 }
 
-func CreateRoom(w http.ResponseWriter, r *http.Request) {
+func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var receivedRoom Room
 	err := json.NewDecoder(r.Body).Decode(&receivedRoom)
 	if err != nil {
@@ -104,9 +106,16 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	// create new room
 	room = Room{
-		ID:           uuid.New(),
 		Availability: receivedRoom.Availability,
 	}
+
+	err = rs.Store.SaveRoom(room)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	success := SuccessResponse{
 		SuccessResponse: "Room created!",
 	}
@@ -142,26 +151,33 @@ func (rs RoomService) GetRooms(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeleteRoom(w http.ResponseWriter, r *http.Request) {
+func (rs RoomService) DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	if id != room.ID.String() {
-		var problem = Problem{
-			Description: "Unable to delete, room not found!",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		err := json.NewEncoder(w).Encode(problem)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	err := rs.Store.DeleteRoom(id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// reset Room
-	room = Room{}
+
+	//if id != room.ID.String() {
+	//	var problem = Problem{
+	//		Description: "Unable to delete, room not found!",
+	//	}
+	//	w.Header().Set("Content-Type", "application/json")
+	//	w.WriteHeader(http.StatusNotFound)
+	//	err := json.NewEncoder(w).Encode(problem)
+	//	if err != nil {
+	//		log.Println(err)
+	//		http.Error(w, err.Error(), http.StatusInternalServerError)
+	//		return
+	//	}
+	//	return
+	//}
+	//// reset Room
+	//room = Room{}
 	w.WriteHeader(http.StatusNoContent)
 }
 
