@@ -4,6 +4,7 @@ import (
 	"context"
 	"golang-api-good-practices/api"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -30,11 +31,6 @@ func NewDB() (*DB, error) {
 }
 
 func (db *DB) GetAllRooms() ([]api.Room, error) {
-	err := db.Ping(context.Background())
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	conn, err := db.Acquire(context.Background())
 	if err != nil {
 		log.Fatalln(err)
@@ -43,15 +39,6 @@ func (db *DB) GetAllRooms() ([]api.Room, error) {
 	defer conn.Release()
 
 	var rooms []api.Room
-	//err = conn.QueryRow(context.Background(), `
-	//	SELECT id, availability
-	//	  FROM gapp.rooms;
-	//`).Scan(&room.ID, &room.Availability)
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//fmt.Println(room.ID)
-	//fmt.Println(room.Availability)
 	rows, err := conn.Query(context.Background(), `
 		SELECT id, availability
 		  FROM gapp.rooms;
@@ -68,58 +55,42 @@ func (db *DB) GetAllRooms() ([]api.Room, error) {
 		rooms = append(rooms, room)
 	}
 
-	//var availability string
-	//var created string
-	//var modified string
-
-	//var rooms []api.Room
-
-	//for rows.Next() {
-	//	err := rows.Scan(&id, &availability, &created, &modified)
-	//	if err != nil {
-	//		log.Println(err)
-	//	}
-	//	fmt.Println(id)
-	//	fmt.Println(availability)
-	//	fmt.Println(created)
-	//	fmt.Println(modified)
-	//	newRoom := api.Room{
-	//		Availability: availability,
-	//	}
-	//	rooms = append(rooms, newRoom)
-	//}
-	//defer rows.Close()
-
 	return rooms, nil
 }
 
-//func (db *DB) GetAllRooms(ctx context.Context) ([]api.Room, error) {
-//	tx, err := db.BeginTx(ctx, nil)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	stmt, err := tx.Prepare(`SELECT * FROM rooms`)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	results, err := stmt.Query()
-//	if err != nil {
-//		tx.Rollback()
-//		return nil, err
-//	}
-//	defer results.Close()
-//	for results.Next() {
-//		var id int
-//		fmt.Println(results.Scan(&id))
-//	}
-//
-//	rooms := make([]api.Room, 0)
-//	err = results.Scan(&rooms)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return rooms, err
-//}
+func (db *DB) SaveRoom(room api.Room) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	stmt := `INSERT INTO gapp.rooms (
+				availability, created, modified
+			 ) VALUES ($1, $2, $3)
+	`
+	_, err = conn.Exec(context.Background(), stmt, room.Availability, time.Now(), time.Now())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (db *DB) DeleteRoom(id string) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println()
+		return err
+	}
+
+	stmt := `DELETE FROM gapp.rooms 
+				   WHERE id = $1
+	`
+	_, err = conn.Exec(context.Background(), stmt, id)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
