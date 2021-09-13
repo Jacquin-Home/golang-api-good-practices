@@ -1,0 +1,20 @@
+# Dockerfile for local development
+FROM golang:alpine3.14
+
+WORKDIR /opt/app
+
+COPY . .
+
+RUN apk -u add make curl
+
+RUN mkdir tmp \
+    && cd $_ \
+    && curl -LO https://github.com/golang-migrate/migrate/releases/download/v4.15.0-beta.1/migrate.linux-amd64.tar.gz \
+    && tar -xvzf migrate.linux-amd64.tar.gz \
+    && mv migrate /usr/local/bin
+
+RUN go mod download
+
+RUN go build -o app
+
+CMD ["./app"]
