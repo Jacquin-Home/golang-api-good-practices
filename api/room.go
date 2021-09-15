@@ -69,19 +69,6 @@ func (rs RoomService) SayHi2() {
 	}
 }
 
-func (rs RoomService) SayHi(w http.ResponseWriter, r *http.Request) {
-	rooms, err := rs.Store.GetAllRooms()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = json.NewEncoder(w).Encode(rooms)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	w.Write([]byte("hi"))
-}
-
 func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var receivedRoom Room
 	err := json.NewDecoder(r.Body).Decode(&receivedRoom)

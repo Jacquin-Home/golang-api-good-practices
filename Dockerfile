@@ -5,6 +5,7 @@ WORKDIR /opt/app/build
 
 COPY . .
 
+
 RUN go mod download \
     && go build -o app
 
