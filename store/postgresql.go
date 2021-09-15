@@ -34,16 +34,11 @@ func NewDB() (*DB, error) {
 	return &DB{dbPool}, nil
 }
 
+// GetAllRooms list all available rooms
 func (db *DB) GetAllRooms() ([]api.Room, error) {
-	conn, err := db.Acquire(context.Background())
-	if err != nil {
-		log.Fatalln(err)
-		return nil, err
-	}
-	defer conn.Release()
 
 	var rooms []api.Room
-	rows, err := conn.Query(context.Background(), `
+	rows, err := db.Query(context.Background(), `
 		SELECT id, availability
 		  FROM gapp.rooms;
 	`)
@@ -62,18 +57,14 @@ func (db *DB) GetAllRooms() ([]api.Room, error) {
 	return rooms, nil
 }
 
+// SaveRoom received a Room object and store it on database
 func (db *DB) SaveRoom(room api.Room) error {
-	conn, err := db.Acquire(context.Background())
-	if err != nil {
-		log.Println(err)
-		return err
-	}
 
 	stmt := `INSERT INTO gapp.rooms (
 				availability, created, modified
 			 ) VALUES ($1, $2, $3)
 	`
-	_, err = conn.Exec(context.Background(), stmt, room.Availability, time.Now(), time.Now())
+	_, err := db.Exec(context.Background(), stmt, room.Availability, time.Now(), time.Now())
 	if err != nil {
 		log.Println(err)
 		return err
@@ -83,16 +74,11 @@ func (db *DB) SaveRoom(room api.Room) error {
 
 // DeleteRoom deletes a room of the specified room id
 func (db *DB) DeleteRoom(id string) error {
-	conn, err := db.Acquire(context.Background())
-	if err != nil {
-		log.Println(err)
-		return err
-	}
 
 	stmt := `DELETE FROM gapp.rooms 
 				   WHERE id = $1
 	`
-	_, err = conn.Exec(context.Background(), stmt, id)
+	_, err := db.Exec(context.Background(), stmt, id)
 	if err != nil {
 		log.Println(err)
 		return err
