@@ -32,8 +32,5 @@ func main() {
 
 	log.Println("HTTP server is up and running...")
 
-	err = http.ListenAndServe("localhost:7000", r)
-	if err != nil {
-		panic(err)
-	}
+	log.Panic(http.ListenAndServe(":7000", r))
 }

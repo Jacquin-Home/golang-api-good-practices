@@ -20,7 +20,6 @@ type RoomService struct {
 }
 
 func NewDB() (*DB, error) {
-	//dbPool, err := pgxpool.Connect(context.Background(), "postgresql://localuser:the-secret@localhost:5432/hotel")
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPasswd := os.Getenv("POSTGRES_PASSWORD")
 	dbHost := os.Getenv("POSTGRES_HOST")
@@ -31,9 +30,6 @@ func NewDB() (*DB, error) {
 		log.Fatalln(err)
 		return nil, err
 	}
-	// todo: is it needed?
-	// https://github.com/jackc/pgx/issues/685
-	//defer dbPool.Close()
 
 	return &DB{dbPool}, nil
 }
@@ -85,10 +81,11 @@ func (db *DB) SaveRoom(room api.Room) error {
 	return nil
 }
 
+// DeleteRoom deletes a room of the specified room id
 func (db *DB) DeleteRoom(id string) error {
 	conn, err := db.Acquire(context.Background())
 	if err != nil {
-		log.Println()
+		log.Println(err)
 		return err
 	}
 
