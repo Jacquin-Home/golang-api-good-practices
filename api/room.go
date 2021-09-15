@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -51,24 +52,15 @@ func (r Room) IsValid() bool {
 }
 
 type Store interface {
-	GetAllRooms() ([]Room, error)
-	SaveRoom(room Room) error
-	DeleteRoom(id string) error
+	GetAllRooms(ctx context.Context) ([]Room, error)
+	SaveRoom(ctx context.Context, room Room) error
+	DeleteRoom(ctx context.Context, id string) error
 }
 type RoomService struct {
 	Store Store
 }
 
-func (rs RoomService) SayHi2() {
-	rooms, err := rs.Store.GetAllRooms()
-	if err != nil {
-		log.Println(err)
-	}
-	for _, item := range rooms {
-		fmt.Println(item)
-	}
-}
-
+// CreateRoom create a new room
 func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var receivedRoom Room
 	err := json.NewDecoder(r.Body).Decode(&receivedRoom)
@@ -96,7 +88,7 @@ func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Availability: receivedRoom.Availability,
 	}
 
-	err = rs.Store.SaveRoom(room)
+	err = rs.Store.SaveRoom(r.Context(), room)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -113,7 +105,7 @@ func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 func (rs RoomService) GetRooms(w http.ResponseWriter, r *http.Request) {
 
 	var rooms []Room
-	rooms, err := rs.Store.GetAllRooms()
+	rooms, err := rs.Store.GetAllRooms(r.Context())
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -142,7 +134,7 @@ func (rs RoomService) DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	err := rs.Store.DeleteRoom(id)
+	err := rs.Store.DeleteRoom(r.Context(), id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

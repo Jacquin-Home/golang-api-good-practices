@@ -6,7 +6,6 @@ import (
 	"golang-api-good-practices/api"
 	"log"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -35,10 +34,10 @@ func NewDB() (*DB, error) {
 }
 
 // GetAllRooms list all available rooms
-func (db *DB) GetAllRooms() ([]api.Room, error) {
+func (db *DB) GetAllRooms(ctx context.Context) ([]api.Room, error) {
 
 	var rooms []api.Room
-	rows, err := db.Query(context.Background(), `
+	rows, err := db.Query(ctx, `
 		SELECT id, availability
 		  FROM gapp.rooms;
 	`)
@@ -58,13 +57,13 @@ func (db *DB) GetAllRooms() ([]api.Room, error) {
 }
 
 // SaveRoom received a Room object and store it on database
-func (db *DB) SaveRoom(room api.Room) error {
+func (db *DB) SaveRoom(ctx context.Context, room api.Room) error {
 
 	stmt := `INSERT INTO gapp.rooms (
 				availability, created, modified
-			 ) VALUES ($1, $2, $3)
+			 ) VALUES ($1, NOW(), NOW())
 	`
-	_, err := db.Exec(context.Background(), stmt, room.Availability, time.Now(), time.Now())
+	_, err := db.Exec(ctx, stmt, room.Availability)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -73,12 +72,12 @@ func (db *DB) SaveRoom(room api.Room) error {
 }
 
 // DeleteRoom deletes a room of the specified room id
-func (db *DB) DeleteRoom(id string) error {
+func (db *DB) DeleteRoom(ctx context.Context, id string) error {
 
 	stmt := `DELETE FROM gapp.rooms 
 				   WHERE id = $1
 	`
-	_, err := db.Exec(context.Background(), stmt, id)
+	_, err := db.Exec(ctx, stmt, id)
 	if err != nil {
 		log.Println(err)
 		return err
