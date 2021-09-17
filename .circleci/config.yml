@@ -46,11 +46,11 @@ workflows:
           filters:
             branches:
               only: main
-      - publish-latest:
-          context:
-            - github-container-registry
-          requires:
-            - build
-          filters:
-            branches:
-              only: main
+#      - publish-latest:
+#          context:
+#            - github-container-registry
+#          requires:
+#            - build
+#          filters:
+#            branches:
+#              only: main
