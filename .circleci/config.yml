@@ -3,7 +3,7 @@ version: 2.1
 executors:
   docker-publisher:
     environment:
-      IMAGE_NAME: ghcr.io/converge/golang-api-good-practices
+      IMAGE_NAME: ghcr.io/jacquin-home/golang-api-good-practices
 
 jobs:
   build:

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Development
+metadata:
+  name: golang-api-good-practices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: golang-api-good-practices
+  template:
+    metadata:
+      labels:
+        name: golang-api-good-practices
+    spec:
+      containers:
+        - name: application
+          image: golang-api-good-practice
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7000
