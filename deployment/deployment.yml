@@ -1,7 +1,8 @@
 apiVersion: apps/v1
-kind: Development
+kind: Deployment
 metadata:
-  name: golang-api-good-practices
+  name: golang-api-good-practices-deployment
+  namespace: dev
 spec:
   replicas: 1
   selector:
@@ -13,8 +14,10 @@ spec:
         name: golang-api-good-practices
     spec:
       containers:
-        - name: application
-          image: golang-api-good-practice
-          imagePullPolicy: IfNotPresent
+        - name: golang-api-good-practices
+          image: ghcr.io/jacquin-home/golang-api-good-practices:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 7000
+      imagePullSecrets:
+        - name: github-cr-secrets
