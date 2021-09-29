@@ -1,0 +1,10 @@
+global:
+  postgresql:
+    image:
+      tag: 13.4
+      repository: arm64v8/postgres
+    postgresqlDatabase: "golang-api-good-practices"
+    postgresqlUsername: "gagp"
+    postgresqlDataDir: /data/pgdata
+    persistence:
+      mounPath: /data

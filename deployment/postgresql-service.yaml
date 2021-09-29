@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-golang-api-good-practices-deployment
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: postgres-golang-api-good-practices
+  template:
+    metadata:
+      labels:
+        name: postgres-golang-api-good-practices
+    spec:
+      containers:
+        - name: postgres-golang-api-good-practices
+          image: arm64v8/postgres:13.4-alpine
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+      imagePullSecrets:
+        - name: postgres-secrets
