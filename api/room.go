@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,9 +23,6 @@ type SuccessResponse struct {
 type Problem struct {
 	Description string `json:"description"`
 }
-
-// this is temporary, and will be replaced when there is a DB
-var room Room
 
 type Availability int
 
@@ -52,15 +48,15 @@ func (r Room) IsValid() bool {
 }
 
 type Store interface {
-	GetAllRooms(ctx context.Context) ([]Room, error)
-	SaveRoom(ctx context.Context, room Room) error
-	DeleteRoom(ctx context.Context, id string) error
+	GetAllRooms() ([]Room, error)
+	SaveRoom(room Room) error
+	DeleteRoom(id string) error
+	PatchRoom(room Room) error
 }
 type RoomService struct {
-	Store Store
+	Store
 }
 
-// CreateRoom create a new room
 func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var receivedRoom Room
 	err := json.NewDecoder(r.Body).Decode(&receivedRoom)
@@ -84,11 +80,11 @@ func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create new room
-	room = Room{
+	room := Room{
 		Availability: receivedRoom.Availability,
 	}
 
-	err = rs.Store.SaveRoom(r.Context(), room)
+	err = rs.Store.SaveRoom(room)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,7 +101,7 @@ func (rs RoomService) CreateRoom(w http.ResponseWriter, r *http.Request) {
 func (rs RoomService) GetRooms(w http.ResponseWriter, r *http.Request) {
 
 	var rooms []Room
-	rooms, err := rs.Store.GetAllRooms(r.Context())
+	rooms, err := rs.Store.GetAllRooms()
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -134,34 +130,17 @@ func (rs RoomService) DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	err := rs.Store.DeleteRoom(r.Context(), id)
+	err := rs.Store.DeleteRoom(id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//if id != room.ID.String() {
-	//	var problem = Problem{
-	//		Description: "Unable to delete, room not found!",
-	//	}
-	//	w.Header().Set("Content-Type", "application/json")
-	//	w.WriteHeader(http.StatusNotFound)
-	//	err := json.NewEncoder(w).Encode(problem)
-	//	if err != nil {
-	//		log.Println(err)
-	//		http.Error(w, err.Error(), http.StatusInternalServerError)
-	//		return
-	//	}
-	//	return
-	//}
-	//// reset Room
-	//room = Room{}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func PatchRoom(w http.ResponseWriter, r *http.Request) {
-
+func (rs RoomService) PatchRoom(w http.ResponseWriter, r *http.Request) {
 	var patchRoom Room
 	err := json.NewDecoder(r.Body).Decode(&patchRoom)
 	if err != nil {
@@ -178,25 +157,12 @@ func PatchRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	patchRoom.ID = uID
 
-	w.Header().Set("Content-Type", "application/json")
-	if patchRoom.ID == room.ID && patchRoom.Availability == room.Availability {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	} else if patchRoom.ID != room.ID {
-		problem := Problem{
-			Description: "Room not found!",
-		}
-		w.WriteHeader(http.StatusNotFound)
-		err = json.NewEncoder(w).Encode(problem)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		return
+	err = rs.Store.PatchRoom(patchRoom)
+	if err != nil {
+		log.Println(err)
 	}
-	room.Availability = patchRoom.Availability
 
+	w.Header().Set("Content-Type", "application/json")
 	success := SuccessResponse{
 		SuccessResponse: "Entity updated!",
 	}
