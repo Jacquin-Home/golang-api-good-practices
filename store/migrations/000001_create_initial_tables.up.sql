@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- -----------------------------------------------------
 -- Create tables
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS rooms
+CREATE TABLE IF NOT EXISTS gapp.rooms
 (
     id           uuid DEFAULT  uuid_generate_v4() NOT NULL ,
     availability TEXT,
