@@ -28,12 +28,13 @@ func main() {
 	r.HandleFunc("/rooms", roomService.GetRooms).Methods("GET")
 	r.HandleFunc("/", api.Version).Methods("GET")
 	r.HandleFunc("/rooms/{id}", roomService.DeleteRoom).Methods("DELETE")
-	r.HandleFunc("/rooms/{id}", api.PatchRoom).Methods("PATCH")
+	r.HandleFunc("/rooms/{id}", roomService.PatchRoom).Methods("PATCH")
 
 	r.HandleFunc("/hi", roomService.SayHi).Methods("POST")
 
 	log.Println("HTTP server is up and running...")
 
+	//err = http.ListenAndServe("localhost:7000", r)
 	err = http.ListenAndServe("localhost:7000", r)
 	if err != nil {
 		panic(err)

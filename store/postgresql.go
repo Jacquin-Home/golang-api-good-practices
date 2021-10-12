@@ -77,6 +77,25 @@ func (db *DB) SaveRoom(room api.Room) error {
 	return nil
 }
 
+func (db *DB) PatchRoom(room api.Room) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	stmt := `UPDATE gapp.rooms 
+				SET availability
+			  WHERE id=$1
+	`
+	_, err = conn.Exec(context.Background(), stmt, room.ID)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
 func (db *DB) DeleteRoom(id string) error {
 	conn, err := db.Acquire(context.Background())
 	if err != nil {
