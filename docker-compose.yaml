@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 version: '3.7'
+=======
+version: '3.8'
+>>>>>>> 6bcce75fe2e516c01f3edb48450536bffa124c36
 
 services:
   postgresql:

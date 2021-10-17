@@ -2,10 +2,9 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"golang-api-good-practices/api"
 	"log"
-	"os"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -19,25 +18,28 @@ type RoomService struct {
 }
 
 func NewDB() (*DB, error) {
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbPasswd := os.Getenv("POSTGRES_PASSWORD")
-	dbHost := os.Getenv("POSTGRES_HOST")
-	dbPort := os.Getenv("POSTGRES_PORT")
-	dbDatabase := os.Getenv("POSTGRES_DB")
-	dbPool, err := pgxpool.Connect(context.Background(), fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", dbUser, dbPasswd, dbHost, dbPort, dbDatabase))
+	dbPool, err := pgxpool.Connect(context.Background(), "postgresql://localuser:the-secret@localhost:5432/hotel")
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
 	}
+	// todo: is it needed?
+	// https://github.com/jackc/pgx/issues/685
+	//defer dbPool.Close()
 
 	return &DB{dbPool}, nil
 }
 
-// GetAllRooms list all available rooms
-func (db *DB) GetAllRooms(ctx context.Context) ([]api.Room, error) {
+func (db *DB) GetAllRooms() ([]api.Room, error) {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	defer conn.Release()
 
 	var rooms []api.Room
-	rows, err := db.Query(ctx, `
+	rows, err := conn.Query(context.Background(), `
 		SELECT id, availability
 		  FROM gapp.rooms;
 	`)
@@ -56,14 +58,18 @@ func (db *DB) GetAllRooms(ctx context.Context) ([]api.Room, error) {
 	return rooms, nil
 }
 
-// SaveRoom received a Room object and store it on database
-func (db *DB) SaveRoom(ctx context.Context, room api.Room) error {
+func (db *DB) SaveRoom(room api.Room) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	stmt := `INSERT INTO gapp.rooms (
 				availability, created, modified
-			 ) VALUES ($1, NOW(), NOW())
+			 ) VALUES ($1, $2, $3)
 	`
-	_, err := db.Exec(ctx, stmt, room.Availability)
+	_, err = conn.Exec(context.Background(), stmt, room.Availability, time.Now(), time.Now())
 	if err != nil {
 		log.Println(err)
 		return err
@@ -71,13 +77,36 @@ func (db *DB) SaveRoom(ctx context.Context, room api.Room) error {
 	return nil
 }
 
-// DeleteRoom deletes a room of the specified room id
-func (db *DB) DeleteRoom(ctx context.Context, id string) error {
+func (db *DB) PatchRoom(room api.Room) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	stmt := `UPDATE gapp.rooms 
+				SET availability
+			  WHERE id=$1
+	`
+	_, err = conn.Exec(context.Background(), stmt, room.ID)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (db *DB) DeleteRoom(id string) error {
+	conn, err := db.Acquire(context.Background())
+	if err != nil {
+		log.Println()
+		return err
+	}
 
 	stmt := `DELETE FROM gapp.rooms 
 				   WHERE id = $1
 	`
-	_, err := db.Exec(ctx, stmt, id)
+	_, err = conn.Exec(context.Background(), stmt, id)
 	if err != nil {
 		log.Println(err)
 		return err
