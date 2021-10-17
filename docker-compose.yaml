@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.7'
 
 services:
   postgresql:
@@ -35,7 +35,7 @@ services:
     volumes:
       - "./:/opt/app"
 #    command: sh -c "go run main.go"
-#    command: sh -c "sleep infinity"
+    command: sh -c "sleep infinity"
 
 volumes:
   postgresql-data:
