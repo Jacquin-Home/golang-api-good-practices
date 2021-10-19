@@ -24,13 +24,11 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/rooms", roomService.CreateRoom).Methods("POST")
-	r.HandleFunc("/rooms", roomService.GetRooms).Methods("GET")
-	r.HandleFunc("/", api.Version).Methods("GET")
-	r.HandleFunc("/rooms/{id}", roomService.DeleteRoom).Methods("DELETE")
-	r.HandleFunc("/rooms/{id}", roomService.PatchRoom).Methods("PATCH")
-
-	r.HandleFunc("/hi", roomService.SayHi).Methods("POST")
+	r.HandleFunc("/rooms", roomService.CreateRoom).Methods(http.MethodPost)
+	r.HandleFunc("/rooms", roomService.GetRooms).Methods(http.MethodGet)
+	r.HandleFunc("/", api.Version).Methods(http.MethodGet)
+	r.HandleFunc("/rooms/{id}", roomService.DeleteRoom).Methods(http.MethodDelete)
+	r.HandleFunc("/rooms/{id}", roomService.PatchRoom).Methods(http.MethodPatch)
 
 	log.Println("HTTP server is up and running...")
 
