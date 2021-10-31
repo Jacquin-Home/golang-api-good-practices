@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"golang-api-good-practices/api"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -18,7 +20,13 @@ type RoomService struct {
 }
 
 func NewDB() (*DB, error) {
-	dbPool, err := pgxpool.Connect(context.Background(), "postgresql://localuser:the-secret@localhost:5432/hotel")
+	pgUser := os.Getenv("PG_USERNAME")
+	pgPass := os.Getenv("PG_PASSWORD")
+	pgHost := os.Getenv("PG_HOST")
+	pgPort := os.Getenv("PG_PORT")
+	pgDb := os.Getenv("PG_DATABASE")
+	psqlConStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDb)
+	dbPool, err := pgxpool.Connect(context.Background(), psqlConStr)
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
